@@ -21,7 +21,7 @@ router.get("/:id", (req, res) => {
   Posts.findById(id)
     .then((post) => {
       if (!post) {
-        res.status(404).json("Post not found");
+        res.status(404).json("The post with the specified ID does not exist");
       } else {
         res.status(200).json(post);
       }
@@ -34,18 +34,23 @@ router.get("/:id", (req, res) => {
 });
 
 router.post("/", (req, res) => {
-  const post = req.body;
-  if (!post.title || !post.contents) {
-    res.status(500).json("please include a title and contents");
+  const newPost = req.body;
+  if (!newPost.title || !newPost.contents) {
+    res.status(400).json("Please provide title and contents for the post");
   } else {
-    Posts.insert(post)
-      .then((post) => {
-        res.status(201).json(post);
+    Posts.insert(newPost)
+      .then((resp) => {
+        console.log(resp);
+        res.status(201).json({
+          id: resp.id,
+          title: newPost.title,
+          contents: newPost.contents,
+        });
       })
       .catch((err) => {
-        res
-          .status(500)
-          .json({ message: "The posts information could not be retrieved" });
+        res.status(500).json({
+          message: "There was an error while saving the post to the database",
+        });
       });
   }
 });
@@ -54,20 +59,25 @@ router.put("/:id", (req, res) => {
   const { id } = req.params;
   const newPost = req.body;
   if (!newPost.title || !newPost.contents) {
-    res.status(500).json("please include a title and contents");
+    res.status(400).json("Please provide title and contents for the post");
   } else {
     Posts.update(id, newPost)
       .then((post) => {
         if (!post) {
-          res.status(404).json("Post not found");
+          res.status(404).json("The post with the specified ID does not exist");
         } else {
-          res.status(200).json(newPost);
+          console.log(post);
+          res.status(200).json({
+            id: post.id,
+            title: newPost.title,
+            contents: newPost.contents,
+          });
         }
       })
       .catch((err) => {
         res
           .status(500)
-          .json({ message: "The posts information could not be retrieved" });
+          .json({ message: "The post information could not be modified" });
       });
   }
 });
@@ -77,15 +87,13 @@ router.delete("/:id", (req, res) => {
   Posts.remove(id)
     .then((post) => {
       if (!post) {
-        res.status(404).json("Post not found");
+        res.status(404).json("The post with the specified ID does not exist");
       } else {
         res.status(200).json(post);
       }
     })
     .catch((err) => {
-      res
-        .status(500)
-        .json({ message: "The posts information could not be retrieved" });
+      res.status(500).json({ message: "The post could not be removed" });
     });
 });
 
@@ -93,16 +101,20 @@ router.get("/:id/comments", (req, res) => {
   const { id } = req.params;
   Posts.findPostComments(id)
     .then((comments) => {
-      if (comments.length > 0) {
-        res.status(200).json(comments);
+      if (comments) {
+        if (comments.length > 0) {
+          res.status(200).json(comments);
+        } else {
+          res.status(400).json("No comments");
+        }
       } else {
-        res.status(404).json("No comments");
+        res.status(404).json("The post with the specified ID does not exist");
       }
     })
     .catch((err) => {
       res
         .status(500)
-        .json({ message: "The posts information could not be retrieved" });
+        .json({ message: "The comments information could not be retrieved" });
     });
 });
 
